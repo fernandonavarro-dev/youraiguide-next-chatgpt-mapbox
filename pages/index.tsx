@@ -5,17 +5,27 @@ import axios from 'axios';
 import { Listing } from '../scraper';
 
 const Mapbox = dynamic(() => import('../components/Mapbox'), { ssr: false });
-const Map = dynamic(() => import('../components/Map'), { ssr: false });
 
 export default function Home() {
   const [zipCode, setZipCode] = useState('');
   const [listings, setListings] = useState<Listing[]>([]);
+  const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
+  const [zoom, setZoom] = useState<number>(3.5);
 
   const fetchListings = async () => {
     const response = await axios.get<Listing[]>(
       `/api/listings?zipCode=${zipCode}`
     );
+    console.log('Fetched data:', response.data);
     setListings(response.data);
+    if (
+      response.data[0] &&
+      response.data[0].latitude &&
+      response.data[0].longitude
+    ) {
+      setCenter([response.data[0].longitude, response.data[0].latitude]);
+      setZoom(12);
+    }
   };
 
   const handleZipCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -28,7 +38,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 flex flex-col justify-center sm:py-12">
+    <div className="min-h-screen bg-gray-800 py-6 flex flex-col justify-center sm:py-12">
       <Head>
         <title>Craigslist Housing Map</title>
         <meta name="description" content="Craigslist Housing Map Application" />
@@ -36,16 +46,16 @@ export default function Home() {
       </Head>
 
       <main className="flex flex-col items-center">
-        <h1 className="text-3xl font-bold">Craigslist Housing Map</h1>
+        <h1 className="text-3xl font-bold text-gray-200">
+          Craigslist Rental Housing Map
+        </h1>
 
         <form onSubmit={handleSubmit} className="mt-4 flex">
-          <label htmlFor="zipCode" className="mr-2">
-            Enter zip code:
-          </label>
           <input
             type="text"
             id="zipCode"
             name="zipCode"
+            placeholder="Enter zip code"
             value={zipCode}
             onChange={handleZipCodeChange}
             className="border border-gray-300 p-2 rounded mr-2"
@@ -59,8 +69,7 @@ export default function Home() {
         </form>
 
         <div className="mt-8 w-full">
-          <Mapbox listings={listings} />
-          {/* <Map listings={listings} /> */}
+          <Mapbox listings={listings} center={center} zoom={zoom} />
         </div>
       </main>
     </div>

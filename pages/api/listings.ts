@@ -14,6 +14,7 @@ export default async function handler(
 
   try {
     const listings = await fetchListings(zipCode);
+    console.log('Fetched listings:', listings);
     res.status(200).json(listings);
   } catch (error) {
     console.error(error);
