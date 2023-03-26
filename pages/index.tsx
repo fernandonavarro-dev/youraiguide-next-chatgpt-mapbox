@@ -11,6 +11,9 @@ export default function Home() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
   const [zoom, setZoom] = useState<number>(3.5);
+  const [boundingBox, setBoundingBox] = useState<
+    [number, number, number, number] | null
+  >(null);
 
   const fetchCoordinatesAndListings = async () => {
     try {
@@ -26,11 +29,12 @@ export default function Home() {
       }
 
       // Set the map center using the bounding box coordinates
-      const boundingBox = osmData.boundingbox;
-      const lat = (parseFloat(boundingBox[0]) + parseFloat(boundingBox[1])) / 2;
-      const lon = (parseFloat(boundingBox[2]) + parseFloat(boundingBox[3])) / 2;
+      const bbox = osmData.boundingbox.map(parseFloat);
+      setBoundingBox(bbox as [number, number, number, number]);
+      const lat = (parseFloat(bbox[0]) + parseFloat(bbox[1])) / 2;
+      const lon = (parseFloat(bbox[2]) + parseFloat(bbox[3])) / 2;
       setCenter([lon, lat]);
-      setZoom(12);
+      setZoom(10);
 
       // Fetch the listings
       const response = await axios.get<Listing[]>(
@@ -82,7 +86,12 @@ export default function Home() {
         </form>
 
         <div className="mt-8 w-full px-4">
-          <Mapbox listings={listings} center={center} zoom={zoom} />
+          <Mapbox
+            listings={listings}
+            center={center}
+            zoom={zoom}
+            boundingBox={boundingBox}
+          />
         </div>
       </main>
     </div>
