@@ -51,48 +51,60 @@ const Mapbox: React.FC<MapboxProps> = ({ listings, center, zoom }) => {
         className="w-full h-[calc(100vh*0.7)] rounded-lg overflow-hidden"
       />
 
-      <div className="menu">
+      <div className="menu font-semibold rounded-lg my-1 justify-center">
         <input
           id="streets-v12"
           type="radio"
           name="rtoggle"
           value="streets-v12"
+          className="mr-1"
           checked={currentStyle === 'mapbox://styles/mapbox/streets-v12'}
           onChange={() => handleStyleChange('streets-v12')}
         />
-        <label htmlFor="streets-v12">streets</label>
+        <label htmlFor="streets-v12" className="mr-2">
+          streets
+        </label>
 
         <input
           id="light-v11"
           type="radio"
           name="rtoggle"
           value="light-v11"
+          className="mr-1"
           checked={currentStyle === 'mapbox://styles/mapbox/light-v11'}
           onChange={() => handleStyleChange('light-v11')}
         />
-        <label htmlFor="light-v11">light</label>
+        <label htmlFor="light-v11" className="mr-2">
+          light
+        </label>
 
         <input
           id="dark-v11"
           type="radio"
           name="rtoggle"
           value="dark-v11"
+          className="mr-1"
           checked={currentStyle === 'mapbox://styles/mapbox/dark-v11'}
           onChange={() => handleStyleChange('dark-v11')}
         />
-        <label htmlFor="dark-v11">dark</label>
+        <label htmlFor="dark-v11" className="mr-2">
+          dark
+        </label>
 
         <input
           id="satellite-streets-v12"
           type="radio"
           name="rtoggle"
           value="satellite-streets-v12"
+          className="mr-1"
           checked={
             currentStyle === 'mapbox://styles/mapbox/satellite-streets-v12'
           }
           onChange={() => handleStyleChange('satellite-streets-v12')}
         />
-        <label htmlFor="satellite-streets-v12">satellite streets</label>
+        <label htmlFor="satellite-streets-v12" className="mr-2">
+          satellite streets
+        </label>
       </div>
       <style jsx>{`
         .menu {
