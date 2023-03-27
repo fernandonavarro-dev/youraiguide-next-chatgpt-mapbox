@@ -1,38 +1,49 @@
+// scraper.ts
 import axios from 'axios';
-import cheerio from 'cheerio';
 
-interface Listing {
-  title: string;
-  price: string;
-  url: string;
-  latitude?: number;
-  longitude?: number;
+interface CityData {
+  name: string;
+  lat: number;
+  lon: number;
+  boundingBox: [number, number, number, number];
 }
 
-async function fetchListings(zipCode: string): Promise<Listing[]> {
+async function fetchCityData(searchString: string): Promise<CityData | null> {
   try {
-    const url = `https://www.craigslist.org/search/apa?search_distance=5&postal=${zipCode}`;
+    let query;
+
+    if (searchString.includes(',')) {
+      const [city, state] = searchString.split(',').map((str) => str.trim());
+      query = `city=${city}&state=${state}&country=US`;
+    } else {
+      query = `postalcode=${searchString}&country=US`;
+    }
+
+    const url = `https://nominatim.openstreetmap.org/search?${query}&format=json`;
     const response = await axios.get(url);
-    const $ = cheerio.load(response.data);
 
-    const listings: Listing[] = [];
+    const osmData = response.data[0];
+    if (!osmData) {
+      console.log('No location data found.');
+      return null;
+    }
 
-    $('.result-row').each((index, element) => {
-      const title = $(element).find('.result-title').text();
-      const price = $(element).find('.result-price').text();
-      const url = $(element).find('a').attr('href') || '';
+    const name = osmData.display_name;
+    const lat = parseFloat(osmData.lat);
+    const lon = parseFloat(osmData.lon);
+    const boundingBox = osmData.boundingbox.map(parseFloat) as [
+      number,
+      number,
+      number,
+      number
+    ];
 
-      const latitude = parseFloat($(element).attr('data-latitude') || '');
-      const longitude = parseFloat($(element).attr('data-longitude') || '');
-
-      listings.push({ title, price, url, latitude, longitude });
-    });
-
-    return listings;
+    return { name, lat, lon, boundingBox };
   } catch (error) {
     console.error(error);
-    return [];
+    return null;
   }
 }
 
-export { fetchListings, type Listing };
+export { fetchCityData };
+export type { CityData };

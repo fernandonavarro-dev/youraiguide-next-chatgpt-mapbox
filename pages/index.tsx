@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
-import { Listing } from '../scraper';
+// import { Listing } from '../scraper';
+import { CityData } from '../scraper';
 
 const Mapbox = dynamic(() => import('../components/Mapbox'), { ssr: false });
 
 export default function Home() {
+  const [cityState, setCityState] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [listings, setListings] = useState<Listing[]>([]);
+  // const [listings, setListings] = useState<Listing[]>([]);
   const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
   const [zoom, setZoom] = useState<number>(3.5);
   const [boundingBox, setBoundingBox] = useState<
@@ -17,34 +19,45 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      // Get the bounding box coordinates from OSM
-      const osmResponse = await axios.get(
-        `https://nominatim.openstreetmap.org/search?postalcode=${zipCode}&country=US&format=json`
-      );
+      let apiQuery;
+      if (zipCode) {
+        apiQuery = `zipCode=${zipCode}`;
+      } else if (cityState) {
+        const [city, state] = cityState.split(',').map((s) => s.trim());
+        apiQuery = `city=${city}&state=${state}`;
+      } else {
+        console.log('No valid input provided.');
+        return;
+      }
 
-      const osmData = osmResponse.data[0];
-      if (!osmData) {
-        console.log('No location data found for this zip code.');
+      // Fetch the city data
+      const response = await axios.get<CityData>(`/api/cityData?${apiQuery}`);
+      console.log('Fetched data:', response.data);
+
+      const cityData = response.data;
+      if (!cityData) {
+        console.log('No location data found for this input.');
         return;
       }
 
       // Set the map center using the bounding box coordinates
-      const bbox = osmData.boundingbox.map(parseFloat);
-      setBoundingBox(bbox as [number, number, number, number]);
-      const lat = (parseFloat(bbox[0]) + parseFloat(bbox[1])) / 2;
-      const lon = (parseFloat(bbox[2]) + parseFloat(bbox[3])) / 2;
+      const bbox = cityData.boundingBox;
+      setBoundingBox(bbox);
+      const lat = (bbox[0] + bbox[1]) / 2;
+      const lon = (bbox[2] + bbox[3]) / 2;
       setCenter([lon, lat]);
       setZoom(10);
 
-      // Fetch the listings
-      const response = await axios.get<Listing[]>(
-        `/api/listings?zipCode=${zipCode}`
-      );
-      console.log('Fetched data:', response.data);
-      setListings(response.data);
+      // Reset input fields
+      setCityState('');
+      setZipCode('');
     } catch (error) {
       console.error('Error fetching data:', error);
     }
+  };
+
+  const handleCityStateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCityState(e.target.value);
   };
 
   const handleZipCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +83,18 @@ export default function Home() {
         <form onSubmit={handleSubmit} className="mt-4 flex">
           <input
             type="text"
+            id="cityState"
+            name="cityState"
+            placeholder="Enter city and state"
+            value={cityState}
+            onChange={handleCityStateChange}
+            className="border border-gray-300 p-2 rounded mr-2"
+          />
+          <p className="text-gray-200 justify-center items-center text-center mr-2 pt-2">
+            or
+          </p>
+          <input
+            type="text"
             id="zipCode"
             name="zipCode"
             placeholder="Enter zip code"
@@ -91,6 +116,7 @@ export default function Home() {
             center={center}
             zoom={zoom}
             boundingBox={boundingBox}
+            cityData={null}
           />
         </div>
       </main>

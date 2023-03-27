@@ -1,6 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
+import ReactMapGL, { Source, Layer } from 'react-map-gl';
+import { CityData } from '../scraper';
 
 // interface Listing {
 //   latitude?: number;
@@ -14,6 +16,7 @@ interface MapboxProps {
   center: [number, number];
   zoom: number;
   boundingBox: [number, number, number, number] | null;
+  cityData: CityData | null;
 }
 
 const Mapbox: React.FC<MapboxProps> = ({
