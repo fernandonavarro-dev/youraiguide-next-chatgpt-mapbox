@@ -1,90 +1,65 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
-import ReactMapGL, { Source, Layer } from 'react-map-gl';
 import { CityData } from '../scraper';
-
-// interface Listing {
-//   latitude?: number;
-//   longitude?: number;
-//   city?: string;
-//   country?: string;
-// }
+import * as turf from '@turf/turf';
 
 interface MapboxProps {
-  //   listings: Listing[];
   center: [number, number];
   zoom: number;
-  boundingBox: [number, number, number, number] | null;
+  radius: number;
   cityData: CityData | null;
 }
 
-const Mapbox: React.FC<MapboxProps> = ({
-  //   listings,
-  center,
-  zoom,
-  boundingBox,
-}) => {
+const Mapbox: React.FC<MapboxProps> = ({ center, zoom, radius }) => {
   const mapContainer = useRef<any>(null);
-  const map = useRef<mapboxgl.Map | any>(null);
-  const [state, setState] = useState({
+  const map = useRef<mapboxgl.Map | null>(null);
+  const [state, setState] = useState<{
+    currentStyle: string;
+    loaded: boolean;
+  }>({
     currentStyle: 'mapbox://styles/mapbox/streets-v12',
     loaded: false,
   });
 
-  const addBoundingBox = () => {
-    if (!map.current || !boundingBox || !state.loaded) return;
+  const addCircle = useCallback(() => {
+    if (!map.current || !state.loaded) return;
 
-    const [minLat, maxLat, minLon, maxLon] = boundingBox;
-    const polygon = [
-      [minLon, minLat],
-      [minLon, maxLat],
-      [maxLon, maxLat],
-      [maxLon, minLat],
-      [minLon, minLat],
-    ];
+    const [lon, lat] = center;
 
-    const boundingBoxSource = {
+    // Create a circle using Turf.js
+    const circleFeature = turf.circle([lon, lat], radius, {
+      steps: 64,
+      units: 'miles',
+    });
+
+    console.log('circleFeature:', circleFeature); // Add a console log here
+
+    const circleSource: mapboxgl.GeoJSONSourceRaw = {
       type: 'geojson',
-      data: {
-        type: 'Feature',
-        geometry: {
-          type: 'Polygon',
-          coordinates: [polygon],
-        },
-      },
+      data: circleFeature,
     };
 
-    if (map.current.getSource('bounding-box')) {
-      map.current.getSource('bounding-box').setData(boundingBoxSource.data);
+    if (map.current.getSource('circle')) {
+      (map.current.getSource('circle') as mapboxgl.GeoJSONSource).setData(
+        circleSource.data as GeoJSON.FeatureCollection<GeoJSON.Geometry>
+      );
     } else {
-      map.current.addSource('bounding-box', boundingBoxSource);
+      // Add the source for the circle
+      map.current.addSource('circle', circleSource);
 
-      // Add a fill layer for the bounding box
+      // Add the circle layer
       map.current.addLayer({
-        id: 'bounding-box-fill',
+        id: 'circle-fill',
         type: 'fill',
-        source: 'bounding-box',
-        layout: {},
+        source: 'circle',
         paint: {
-          'fill-color': '#0080ff',
-          'fill-opacity': 0.5,
-        },
-      });
-
-      // Add an outline layer for the bounding box
-      map.current.addLayer({
-        id: 'bounding-box-outline',
-        type: 'line',
-        source: 'bounding-box',
-        layout: {},
-        paint: {
-          'line-color': '#000',
-          'line-width': 3,
+          'fill-color': '#007cbf',
+          'fill-opacity': 0.3,
         },
       });
     }
-  };
+  }, [center, state.loaded]);
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '';
@@ -103,27 +78,24 @@ const Mapbox: React.FC<MapboxProps> = ({
     const nav = new mapboxgl.NavigationControl();
     map.current.addControl(nav, 'top-right');
 
-    // Add other controls and markers here...
-
-    return () => map.current?.remove();
-  }, [
-    // listings,
-    center,
-    zoom,
-    state.currentStyle,
-  ]);
+    return () => {
+      if (map.current) {
+        map.current.remove();
+      }
+    };
+  }, [center, zoom, state.currentStyle]);
 
   useEffect(() => {
-    if (map.current.loaded()) {
-      setTimeout(addBoundingBox, 0);
+    if (map.current && map.current.loaded()) {
+      setTimeout(addCircle, 0);
     } else {
-      map.current.once('load', addBoundingBox);
+      map.current?.once('load', addCircle);
     }
 
     return () => {
-      map.current.off('load', addBoundingBox);
+      map.current?.off('load', addCircle);
     };
-  }, [boundingBox, state.loaded, state.currentStyle, addBoundingBox]);
+  }, [state.loaded, state.currentStyle, addCircle]);
 
   const handleStyleChange = (newStyle: string) => {
     if (!map.current || !state.loaded) return;
@@ -149,7 +121,7 @@ const Mapbox: React.FC<MapboxProps> = ({
     }));
 
     // Add the layers back
-    addBoundingBox();
+    addCircle();
   };
 
   useEffect(() => {
@@ -160,18 +132,20 @@ const Mapbox: React.FC<MapboxProps> = ({
     );
     styleChangeButtons.forEach((button) =>
       button.addEventListener('change', (event: any) => {
-        handleStyleChange(event.target.value);
+        const newStyle = event.target.value;
+        handleStyleChange(newStyle);
       })
     );
 
     return () => {
       styleChangeButtons.forEach((button) =>
         button.removeEventListener('change', (event: any) => {
-          handleStyleChange(event.target.value);
+          const newStyle = event.target.value;
+          handleStyleChange(newStyle);
         })
       );
     };
-  }, [state.loaded, state.currentStyle, boundingBox, handleStyleChange]);
+  }, [state.loaded, handleStyleChange]);
 
   return (
     <>
