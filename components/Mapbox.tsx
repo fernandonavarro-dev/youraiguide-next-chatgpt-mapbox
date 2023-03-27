@@ -33,8 +33,6 @@ const Mapbox: React.FC<MapboxProps> = ({ center, zoom, radius }) => {
       units: 'miles',
     });
 
-    console.log('circleFeature:', circleFeature); // Add a console log here
-
     const circleSource: mapboxgl.GeoJSONSourceRaw = {
       type: 'geojson',
       data: circleFeature,
@@ -101,17 +99,13 @@ const Mapbox: React.FC<MapboxProps> = ({ center, zoom, radius }) => {
     if (!map.current || !state.loaded) return;
 
     // Remove the existing layers
-    if (map.current.getLayer('bounding-box-fill')) {
-      map.current.removeLayer('bounding-box-fill');
-    }
-
-    if (map.current.getLayer('bounding-box-outline')) {
-      map.current.removeLayer('bounding-box-outline');
+    if (map.current.getLayer('circle-fill')) {
+      map.current.removeLayer('circle-fill');
     }
 
     // Remove the existing source
-    if (map.current.getSource('bounding-box')) {
-      map.current.removeSource('bounding-box');
+    if (map.current.getSource('circle')) {
+      map.current.removeSource('circle');
     }
 
     // Set the new style

@@ -5,7 +5,6 @@ interface CityData {
   name: string;
   lat: number;
   lon: number;
-  boundingBox: [number, number, number, number];
 }
 
 async function fetchCityData(searchString: string): Promise<CityData | null> {
@@ -31,14 +30,13 @@ async function fetchCityData(searchString: string): Promise<CityData | null> {
     const name = osmData.display_name;
     const lat = parseFloat(osmData.lat);
     const lon = parseFloat(osmData.lon);
-    const boundingBox = osmData.boundingbox.map(parseFloat) as [
-      number,
-      number,
-      number,
-      number
-    ];
+    const cityData: CityData = {
+      name,
+      lat,
+      lon,
+    };
 
-    return { name, lat, lon, boundingBox };
+    return cityData;
   } catch (error) {
     console.error(error);
     return null;

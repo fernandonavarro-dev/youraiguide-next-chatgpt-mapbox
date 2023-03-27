@@ -36,20 +36,15 @@ export default function Home() {
 
       // Fetch the city data
       const response = await axios.get<CityData>(`/api/cityData?${apiQuery}`);
-      console.log('Fetched data:', response.data);
-
       const cityData = response.data;
       if (!cityData) {
         console.log('No location data found for this input.');
         return;
       }
 
-      // Set the map center using the bounding box coordinates
-      const bbox = cityData.boundingBox;
-      // setBoundingBox(bbox);
-      const lat = (bbox[0] + bbox[1]) / 2;
-      const lon = (bbox[2] + bbox[3]) / 2;
-      setCenter([lon, lat]);
+      const lat = cityData.lat;
+      const lon = cityData.lon;
+      setCenter([cityData.lon, cityData.lat]);
       setZoom(10);
 
       const maxRadius = 5;
