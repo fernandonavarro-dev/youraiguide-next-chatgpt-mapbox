@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import axios from 'axios';
 // import { Listing } from '../scraper';
 import { CityData } from '../scraper';
+import ChatGPTAssistant from '@/components/ChatGPTAssistant';
 
 const Mapbox = dynamic(import('../components/Mapbox'), { ssr: false });
 
@@ -159,6 +160,7 @@ export default function Home() {
             cityData={null}
           />
         </div>
+        <ChatGPTAssistant />
       </main>
     </div>
   );
