@@ -2,22 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 
-interface Listing {
-  latitude?: number;
-  longitude?: number;
-  city?: string;
-  country?: string;
-}
+// interface Listing {
+//   latitude?: number;
+//   longitude?: number;
+//   city?: string;
+//   country?: string;
+// }
 
 interface MapboxProps {
-  listings: Listing[];
+  //   listings: Listing[];
   center: [number, number];
   zoom: number;
   boundingBox: [number, number, number, number] | null;
 }
 
 const Mapbox: React.FC<MapboxProps> = ({
-  listings,
+  //   listings,
   center,
   zoom,
   boundingBox,
@@ -103,7 +103,12 @@ const Mapbox: React.FC<MapboxProps> = ({
     // Add other controls and markers here...
 
     return () => map.current?.remove();
-  }, [listings, center, zoom, state.currentStyle]);
+  }, [
+    // listings,
+    center,
+    zoom,
+    state.currentStyle,
+  ]);
 
   useEffect(() => {
     if (map.current.loaded()) {

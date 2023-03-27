@@ -15,7 +15,7 @@ export default function Home() {
     [number, number, number, number] | null
   >(null);
 
-  const fetchCoordinatesAndListings = async () => {
+  const fetchData = async () => {
     try {
       // Get the bounding box coordinates from OSM
       const osmResponse = await axios.get(
@@ -53,19 +53,19 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchCoordinatesAndListings();
+    fetchData();
   };
 
   return (
     <div className="min-h-screen bg-gray-800 py-6 flex flex-col justify-start sm:py-12">
       <Head>
-        <title>Livability Map</title>
-        <meta name="description" content="Livability Map Application" />
+        <title>Your AI Guide</title>
+        <meta name="description" content="Your AI Guide Web App" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="flex flex-col items-center">
-        <h1 className="text-3xl font-bold text-gray-200">Livability Map</h1>
+        <h1 className="text-3xl font-bold text-gray-200">Your AI Guide</h1>
 
         <form onSubmit={handleSubmit} className="mt-4 flex">
           <input
@@ -87,7 +87,7 @@ export default function Home() {
 
         <div className="mt-8 w-full px-4">
           <Mapbox
-            listings={listings}
+            // listings={listings}
             center={center}
             zoom={zoom}
             boundingBox={boundingBox}
