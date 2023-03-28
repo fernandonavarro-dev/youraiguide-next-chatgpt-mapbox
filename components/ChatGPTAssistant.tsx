@@ -1,6 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import { ExpandCollapseToggle } from './ExpandCollapseToggle';
+
+type ChatGPTAssistantProps = {
+  location: string;
+  shouldExpand: boolean;
+};
 
 type MessageObject = {
   message: string;
@@ -9,20 +14,18 @@ type MessageObject = {
   sentTime?: string;
 };
 
-const systemMessage = {
-  role: 'system',
-  content:
-    "You are an AI trained to assist with prompt engineering and generating images using generative AI. Provide only the prompt text for generating images. Explain concepts like you're addressing a junior/mid-level web developer.",
-};
-
 const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
-function ChatGPTAssistant() {
+function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
+  const systemMessage = {
+    role: 'system',
+    content: `I am an AI trained like a hotel concierge to assist with recommendations for food, drinks, sightseeing, and activities within a 5-mile radius of ${location}.`,
+  };
   const [typing, setTyping] = useState(false);
   const [messages, setMessages] = useState<MessageObject[]>([
     {
       message:
-        "Hello, I'm ChatGPT! Let me know if you need help with your prompts!",
+        "Hello, I'm ChatGPT Location Assistant! Let me know if you need help with some recommendations near you!",
       sentTime: 'just now',
       sender: 'ChatGPT',
     },
@@ -30,6 +33,20 @@ function ChatGPTAssistant() {
 
   const [inputValue, setInputValue] = useState('');
   const [expanded, setExpanded] = useState(false);
+
+  useEffect(() => {
+    if (location && shouldExpand) {
+      const formattedLocation = location.replace(/[\[\]']+/g, '');
+      setMessages([
+        {
+          message: `Hello! I see you're at ${formattedLocation}. I can provide recommendations for food, drinks, sightseeing, and activities nearby. `,
+          sentTime: 'just now',
+          sender: 'ChatGPT',
+        },
+      ]);
+      setExpanded(true);
+    }
+  }, [location, shouldExpand]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -149,7 +166,7 @@ function ChatGPTAssistant() {
         <div className="text-xl font-semibold mb-4">ChatGPT Location Guide</div>
         <ExpandCollapseToggle
           expanded={expanded}
-          onToggleExpand={handleToggleExpand}
+          onToggleExpand={() => setExpanded(!expanded)}
         />
       </div>
 

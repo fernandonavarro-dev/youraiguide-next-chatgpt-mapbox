@@ -5,6 +5,7 @@ import axios from 'axios';
 // import { Listing } from '../scraper';
 import { CityData } from '../scraper';
 import ChatGPTAssistant from '@/components/ChatGPTAssistant';
+import { formatLocation } from '@/utils/locationFormatter';
 
 const Mapbox = dynamic(import('../components/Mapbox'), { ssr: false });
 
@@ -17,10 +18,11 @@ export default function Home() {
   // const [listings, setListings] = useState<Listing[]>([]);
   const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
   const [zoom, setZoom] = useState<number>(3.5);
+  const [shouldExpand, setShouldExpand] = useState(false);
   // const [boundingBox, setBoundingBox] = useState<
   //   [number, number, number, number] | null
   // >(null);
-  const mapRef = useRef<any>(null);
+  // const mapRef = useRef<any>(null);
 
   const fetchData = async () => {
     try {
@@ -98,7 +100,10 @@ export default function Home() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     fetchData();
+    setShouldExpand(true);
   };
+
+  const locationString = formatLocation(cityState, zipCode);
 
   return (
     <div className="min-h-screen bg-gray-800 py-6 flex flex-col justify-start sm:py-12">
@@ -160,7 +165,10 @@ export default function Home() {
             cityData={null}
           />
         </div>
-        <ChatGPTAssistant />
+        <ChatGPTAssistant
+          location={locationString}
+          shouldExpand={shouldExpand}
+        />
       </main>
     </div>
   );
