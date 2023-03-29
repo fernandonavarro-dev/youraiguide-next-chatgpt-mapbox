@@ -11,7 +11,7 @@ const Mapbox = dynamic(import('../components/Mapbox'), { ssr: false });
 export default function Home() {
   const [cityState, setCityState] = useState('');
   const [zipCode, setZipCode] = useState('');
-  const [radius, setRadius] = useState(5);
+  const [radius, setRadius] = useState(2.5);
   const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
   const [zoom, setZoom] = useState<number>(3.5);
   const [shouldExpand, setShouldExpand] = useState(false);
@@ -40,12 +40,13 @@ export default function Home() {
       }
 
       setCenter([cityData.lon, cityData.lat]);
-      setZoom(12);
+      setZoom(getZoomLevelByRadius(radius));
+      // setZoom(11);
 
-      const maxRadius = 2.5;
-      if (radius > maxRadius) {
-        setRadius(maxRadius);
-      }
+      // const maxRadius = 2.5;
+      // if (radius > maxRadius) {
+      //   setRadius(maxRadius);
+      // }
 
       // Reset input fields
       setCityState('');
@@ -67,8 +68,9 @@ export default function Home() {
 
         // Set the map center and circle radius around the user's location
         setCenter([longitude, latitude]);
-        setRadius(5);
-        setZoom(10);
+        setZoom(getZoomLevelByRadius(radius));
+        // setRadius(5);
+        // setZoom(11);
 
         // Fetch the city and state data based on user's latitude and longitude
         const reverseGeocodeResponse = await axios.get(
@@ -89,8 +91,8 @@ export default function Home() {
             // const zipCode = feature.text;
 
             setCenter([longitude, latitude]);
-            setRadius(5);
-            setZoom(10);
+            // setRadius(5);
+            // setZoom(11);
 
             const locationStr = formatLocation(`${city}, ${state}`, '');
             setFormattedLocation(locationStr);
@@ -140,9 +142,28 @@ export default function Home() {
     fetchData(apiQuery);
     setShouldExpand(true);
     setFormattedLocation(formatLocation(cityState, zipCode));
+    setZoom(getZoomLevelByRadius(radius));
   };
 
-  const locationString = formatLocation(cityState, zipCode);
+  const handleRadiusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setRadius(parseFloat(e.target.value));
+    setZoom(getZoomLevelByRadius(radius));
+  };
+
+  const getZoomLevelByRadius = (radius: number) => {
+    switch (radius) {
+      case 0.5:
+        return 14;
+      case 1:
+        return 13;
+      case 2.5:
+        return 12;
+      case 5:
+        return 11;
+      default:
+        return 12;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-800 py-6 flex flex-col justify-start sm:py-12">
@@ -193,6 +214,19 @@ export default function Home() {
           >
             Search
           </button>
+          <div className="pt-0 text-gray-100 justify-center items-center text-xs text-center flex">
+            <select
+              value={radius}
+              onChange={handleRadiusChange}
+              className="bg-gray-200/70 text-black text-center font-semibold ml-2 text-sm py-0 px-1 mr-1 rounded hover:bg-gray-300"
+            >
+              <option value={0.5}>0.5 miles</option>
+              <option value={1}>1 mile</option>
+              <option value={2.5}>2.5 miles</option>
+              <option value={5}>5 miles</option>
+            </select>
+            <p>radius</p>
+          </div>
         </form>
 
         <div className="mt-8 w-full px-4">
