@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
 import { ExpandCollapseToggle } from './ExpandCollapseToggle';
+import axios from 'axios';
 
 type ChatGPTAssistantProps = {
   location: string;
@@ -30,6 +31,9 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
       sender: 'ChatGPT',
     },
   ]);
+  const [conversationState, setConversationState] = useState<
+    'idle' | 'waitingForFoodType'
+  >('idle');
 
   const [inputValue, setInputValue] = useState('');
   const [expanded, setExpanded] = useState(false);
@@ -48,11 +52,90 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
     }
   }, [location, shouldExpand]);
 
+  const fetchYelpRecommendations = async (
+    location: string,
+    categories: string,
+    term: string
+  ) => {
+    try {
+      const response = await axios.get('/api/yelp', {
+        params: { location, categories, term },
+      });
+
+      // Sort by rating and return top 5
+      const sortedData = response.data
+        .sort((a: any, b: any) => b.rating - a.rating)
+        .slice(0, 5);
+      return sortedData;
+    } catch (error) {
+      console.error('Error fetching recommendations:', error);
+      return null;
+    }
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (inputValue.trim() === '') return;
-    const formattedInputValue = `Give me a prompt for ${inputValue}`;
-    await handleSend(formattedInputValue);
+
+    // Add user's message to the messages array
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { message: inputValue, sender: 'user' },
+    ]);
+
+    // Check the state of the conversation and take action accordingly
+    switch (conversationState) {
+      case 'idle':
+        // Check if the user's input message is a query for recommendations
+        if (
+          inputValue.includes('recommend') ||
+          inputValue.includes('good options to eat')
+        ) {
+          // Ask the user for the type of food
+          const newMessage = {
+            message: 'What type of food are you looking for?',
+            sender: 'ChatGPT',
+          };
+          setMessages((prevMessages) => [...prevMessages, newMessage]);
+          setConversationState('waitingForFoodType');
+        } else {
+          // Process the message using ChatGPT
+          await handleSend(inputValue);
+        }
+        break;
+      case 'waitingForFoodType':
+        // Define the categories (e.g., 'restaurants') based on user query
+        const categories = 'restaurants';
+
+        // Use user's input as the term (e.g., 'sushi')
+        const term = inputValue;
+
+        // Fetch recommendations from Yelp API
+        const recommendations = await fetchYelpRecommendations(
+          location,
+          categories,
+          term
+        );
+
+        // Format and display the recommendations to the user
+        const formattedRecommendations = recommendations
+          .map(
+            (item: any, index: number) =>
+              `${index + 1}. ${item.name} (${item.rating} stars)`
+          )
+          .join('\n');
+
+        const newMessage = {
+          message: `These are the 5 highest ranked options for what you're looking for:\n${formattedRecommendations}`,
+          sender: 'ChatGPT',
+        };
+        setMessages((prevMessages) => [...prevMessages, newMessage]);
+        setConversationState('idle');
+        break;
+      default:
+        break;
+    }
+
     setInputValue('');
   };
 
