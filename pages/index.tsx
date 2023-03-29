@@ -2,31 +2,25 @@ import { useState, useRef } from 'react';
 import Head from 'next/head';
 import dynamic from 'next/dynamic';
 import axios from 'axios';
-// import { Listing } from '../scraper';
 import { CityData } from '../scraper';
 import ChatGPTAssistant from '@/components/ChatGPTAssistant';
 import { formatLocation } from '@/utils/locationFormatter';
 
 const Mapbox = dynamic(import('../components/Mapbox'), { ssr: false });
 
-// const MILES_TO_METERS = 1609.34;
-
 export default function Home() {
   const [cityState, setCityState] = useState('');
   const [zipCode, setZipCode] = useState('');
   const [radius, setRadius] = useState(5);
-  // const [listings, setListings] = useState<Listing[]>([]);
   const [center, setCenter] = useState<[number, number]>([-98.5, 39.8]);
   const [zoom, setZoom] = useState<number>(3.5);
   const [shouldExpand, setShouldExpand] = useState(false);
-  // const [boundingBox, setBoundingBox] = useState<
-  //   [number, number, number, number] | null
-  // >(null);
-  // const mapRef = useRef<any>(null);
+  const [formattedLocation, setFormattedLocation] = useState('');
 
-  const fetchData = async () => {
+  const fetchData = async (apiQuery: string) => {
     try {
-      let apiQuery;
+      // Build the apiQuery based on the provided parameters
+      // let apiQuery;
       if (zipCode) {
         apiQuery = `zipCode=${zipCode}`;
       } else if (cityState) {
@@ -45,12 +39,10 @@ export default function Home() {
         return;
       }
 
-      const lat = cityData.lat;
-      const lon = cityData.lon;
       setCenter([cityData.lon, cityData.lat]);
-      setZoom(10);
+      setZoom(12);
 
-      const maxRadius = 5;
+      const maxRadius = 2.5;
       if (radius > maxRadius) {
         setRadius(maxRadius);
       }
@@ -77,6 +69,42 @@ export default function Home() {
         setCenter([longitude, latitude]);
         setRadius(5);
         setZoom(10);
+
+        // Fetch the city and state data based on user's latitude and longitude
+        const reverseGeocodeResponse = await axios.get(
+          `https://api.mapbox.com/geocoding/v5/mapbox.places/${longitude},${latitude}.json?access_token=${process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN}&types=postcode`
+        );
+        console.log('reverseGeocodeResponse', reverseGeocodeResponse);
+
+        if (reverseGeocodeResponse.data.features.length > 0) {
+          const feature = reverseGeocodeResponse.data.features[0];
+          console.log('feature.context', feature.context);
+          const cityObj = feature.context[0];
+          const stateObj = feature.context[2];
+          console.log('cityObj', cityObj);
+
+          if (cityObj && stateObj) {
+            const city = cityObj.text;
+            const state = stateObj.text;
+            // const zipCode = feature.text;
+
+            setCenter([longitude, latitude]);
+            setRadius(5);
+            setZoom(10);
+
+            const locationStr = formatLocation(`${city}, ${state}`, '');
+            setFormattedLocation(locationStr);
+            console.log('locationStr', locationStr);
+
+            // Call fetchData function with appropriate query parameters
+            fetchData(cityState);
+            setShouldExpand(true);
+          } else {
+            console.log('Unable to retrieve location information.');
+          }
+        } else {
+          console.log('Unable to retrieve location information.');
+        }
       },
       (error) => {
         console.log('Error fetching geolocation:', error);
@@ -99,8 +127,19 @@ export default function Home() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    fetchData();
+    let apiQuery;
+    if (zipCode) {
+      apiQuery = `zipCode=${zipCode}`;
+    } else if (cityState) {
+      const [city, state] = cityState.split(',').map((s) => s.trim());
+      apiQuery = `city=${city}&state=${state}`;
+    } else {
+      console.log('No valid input provided.');
+      return;
+    }
+    fetchData(apiQuery);
     setShouldExpand(true);
+    setFormattedLocation(formatLocation(cityState, zipCode));
   };
 
   const locationString = formatLocation(cityState, zipCode);
@@ -118,6 +157,7 @@ export default function Home() {
 
         <form onSubmit={handleSubmit} className="mt-4 flex">
           <button
+            type="button"
             onClick={requestLocation}
             className="bg-green-500 text-white font-bold mr-2 py-2 px-4 rounded ml-2 hover:bg-green-700"
           >
@@ -166,7 +206,7 @@ export default function Home() {
           />
         </div>
         <ChatGPTAssistant
-          location={locationString}
+          location={formattedLocation}
           shouldExpand={shouldExpand}
         />
       </main>
