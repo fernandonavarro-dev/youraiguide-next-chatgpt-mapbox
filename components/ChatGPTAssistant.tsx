@@ -1,11 +1,15 @@
 import { useEffect, useState } from 'react';
 import '@chatscope/chat-ui-kit-styles/dist/default/styles.min.css';
-import { ExpandCollapseToggle } from './ExpandCollapseToggle';
 import axios from 'axios';
+import { MessageList } from './MessageList';
+import { MessageInputForm } from './MessageInputForm';
+import { ChatHeader } from './ChatHeader';
 
 type ChatGPTAssistantProps = {
   location: string;
   shouldExpand: boolean;
+  radius: number;
+  setRecommendations: (recommendations: any[]) => void;
 };
 
 type MessageObject = {
@@ -13,14 +17,27 @@ type MessageObject = {
   direction?: string;
   sender: string;
   sentTime?: string;
+  structuredData?: any;
 };
+export type { MessageObject };
 
 const API_KEY = process.env.NEXT_PUBLIC_OPENAI_API_KEY;
 
-function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
+function ChatGPTAssistant({
+  location,
+  shouldExpand,
+  radius,
+  setRecommendations,
+}: ChatGPTAssistantProps) {
   const systemMessage = {
     role: 'system',
-    content: `I am an AI trained like a hotel concierge to assist with recommendations for food, drinks, sightseeing, and activities within a 5-mile radius of ${location}.`,
+    content: `I am an AI trained like a hotel concierge to assist with recommendations for food, drinks, sightseeing, and activities within a ${radius} radius of ${location}. Your response should have 2 parts. The first is your original natural language response, which should only include the name of the recommendations and a good short description. The second should begin with a marker "---JSON---" and provide a JSON formatted message array of this shape 
+    {
+      "name": recommendation name,
+      "address": recommendation address,
+      "coordinates": {"longitude": recommendation's longitude, "latitude": recommendation's latitude},
+      "description": recommendation's description
+    } for each recommendation in the first part of the response.`,
   };
   const [typing, setTyping] = useState(false);
   const [messages, setMessages] = useState<MessageObject[]>([
@@ -52,26 +69,26 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
     }
   }, [location, shouldExpand]);
 
-  const fetchYelpRecommendations = async (
-    location: string,
-    categories: string,
-    term: string
-  ) => {
-    try {
-      const response = await axios.get('/api/yelp', {
-        params: { location, categories, term },
-      });
+  // const fetchYelpRecommendations = async (
+  //   location: string,
+  //   categories: string,
+  //   term: string
+  // ) => {
+  //   try {
+  //     const response = await axios.get('/api/yelp', {
+  //       params: { location, categories, term },
+  //     });
 
-      // Sort by rating and return top 5
-      const sortedData = response.data
-        .sort((a: any, b: any) => b.rating - a.rating)
-        .slice(0, 5);
-      return sortedData;
-    } catch (error) {
-      console.error('Error fetching recommendations:', error);
-      return null;
-    }
-  };
+  //     // Sort by rating and return top 5
+  //     const sortedData = response.data
+  //       .sort((a: any, b: any) => b.rating - a.rating)
+  //       .slice(0, 5);
+  //     return sortedData;
+  //   } catch (error) {
+  //     console.error('Error fetching recommendations:', error);
+  //     return null;
+  //   }
+  // };
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -88,8 +105,8 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
       case 'idle':
         // Check if the user's input message is a query for recommendations
         if (
-          inputValue.includes('recommend') ||
-          inputValue.includes('good options to eat')
+          // inputValue.includes('recommend') ||
+          inputValue.includes('good options to eat or not eat right now')
         ) {
           // Ask the user for the type of food
           const newMessage = {
@@ -103,45 +120,40 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
           await handleSend(inputValue);
         }
         break;
-      case 'waitingForFoodType':
-        // Define the categories (e.g., 'restaurants') based on user query
-        const categories = 'restaurants';
+      // case 'waitingForFoodType':
+      //   // Define the categories (e.g., 'restaurants') based on user query
+      //   const categories = 'restaurants';
 
-        // Use user's input as the term (e.g., 'sushi')
-        const term = inputValue;
+      //   // Use user's input as the term (e.g., 'sushi')
+      //   const term = inputValue;
 
-        // Fetch recommendations from Yelp API
-        const recommendations = await fetchYelpRecommendations(
-          location,
-          categories,
-          term
-        );
+      //   // Fetch recommendations from Yelp API
+      //   const recommendations = await fetchYelpRecommendations(
+      //     location,
+      //     categories,
+      //     term
+      //   );
 
-        // Format and display the recommendations to the user
-        const formattedRecommendations = recommendations
-          .map(
-            (item: any, index: number) =>
-              `${index + 1}. ${item.name} (${item.rating} stars)`
-          )
-          .join('\n');
+      //   // Format and display the recommendations to the user
+      //   const formattedRecommendations = recommendations
+      //     .map(
+      //       (item: any, index: number) =>
+      //         `${index + 1}. ${item.name} (${item.rating} stars)`
+      //     )
+      //     .join('\n');
 
-        const newMessage = {
-          message: `These are the 5 highest ranked options for what you're looking for:\n${formattedRecommendations}`,
-          sender: 'ChatGPT',
-        };
-        setMessages((prevMessages) => [...prevMessages, newMessage]);
-        setConversationState('idle');
-        break;
+      //   const newMessage = {
+      //     message: `These are the 5 highest ranked options for what you're looking for:\n${formattedRecommendations}`,
+      //     sender: 'ChatGPT',
+      //   };
+      //   setMessages((prevMessages) => [...prevMessages, newMessage]);
+      //   setConversationState('idle');
+      //   break;
       default:
         break;
     }
 
     setInputValue('');
-  };
-
-  // Add a function to toggle the expand/collapse state
-  const handleToggleExpand = () => {
-    setExpanded(!expanded);
   };
 
   const handleSend = async (message: string) => {
@@ -206,37 +218,26 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
 
       const data = await response.json();
       console.log(data);
+      // Extract natural language message
+      const [message, jsonStr] =
+        data.choices[0].message.content.split('---JSON---');
+      // Extract JSON to map recommendations as markers
+      const structuredData = jsonStr ? JSON.parse(jsonStr.trim()) : null;
+
       setMessages([
         ...chatMessages,
         {
-          message: data.choices[0].message.content,
+          message: message.trim(),
           sender: 'ChatGPT',
+          structuredData: structuredData,
         },
       ]);
       setTyping(false);
+      setRecommendations(structuredData);
     } catch (error) {
       console.error(error);
       setTyping(false);
     }
-  }
-
-  function formatAssistantMessage(message: string) {
-    const parts = message.split(/("[^"]+")/);
-    return parts.map((part, index) => {
-      if (part.startsWith('"') && part.endsWith('"')) {
-        return (
-          <>
-            <br key={`before-${index}`} />
-            <p key={index} className="mb-0 mt-2 font-bold">
-              {part.slice(1, -1)}
-            </p>
-            <br key={`after-${index}`} />
-          </>
-        );
-      } else {
-        return <span key={index}>{part}</span>;
-      }
-    });
   }
 
   return (
@@ -245,51 +246,15 @@ function ChatGPTAssistant({ location, shouldExpand }: ChatGPTAssistantProps) {
         expanded ? 'h-96' : 'h-16'
       } bg-gray-700 p-4 rounded-lg shadow-lg`}
     >
-      <div className="flex items-center justify-between">
-        <div className="text-xl font-semibold mb-4">ChatGPT Location Guide</div>
-        <ExpandCollapseToggle
-          expanded={expanded}
-          onToggleExpand={() => setExpanded(!expanded)}
-        />
-      </div>
-
+      <ChatHeader expanded={expanded} setExpanded={setExpanded} />
       {expanded && (
         <>
-          <div className="h-64 overflow-y-auto mb-4 p-1">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`mb-2 ${
-                  message.sender === 'user' ? 'text-right' : ''
-                }`}
-              >
-                <span
-                  className={
-                    message.sender === 'user'
-                      ? 'text-blue-400'
-                      : 'text-green-400'
-                  }
-                >
-                  {message.sender === 'user' ? 'You: ' : 'Assistant: '}
-                </span>
-                {message.sender === 'ChatGPT'
-                  ? formatAssistantMessage(message.message)
-                  : message.message}
-              </div>
-            ))}
-          </div>
-
-          <form onSubmit={handleSubmit} className="flex">
-            <input
-              type="text"
-              className="flex-grow bg-gray-500 text-gray-200 rounded-l-lg p-2"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-            />
-            <button type="submit" className="bg-blue-500 p-2 rounded-r-lg">
-              Send
-            </button>
-          </form>
+          <MessageList messages={messages} />
+          <MessageInputForm
+            inputValue={inputValue}
+            setInputValue={setInputValue}
+            handleSubmit={handleSubmit}
+          />
         </>
       )}
     </div>

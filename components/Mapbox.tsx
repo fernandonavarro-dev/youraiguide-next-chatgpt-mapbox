@@ -9,9 +9,15 @@ interface MapboxProps {
   zoom: number;
   radius: number;
   cityData: CityData | null;
+  recommendations: any[];
 }
 
-const Mapbox: React.FC<MapboxProps> = ({ center, zoom, radius }) => {
+const Mapbox: React.FC<MapboxProps> = ({
+  center,
+  zoom,
+  radius,
+  recommendations,
+}) => {
   const mapContainer = useRef<any>(null);
   const map = useRef<mapboxgl.Map | null>(null);
   const [state, setState] = useState<{
@@ -141,6 +147,21 @@ const Mapbox: React.FC<MapboxProps> = ({ center, zoom, radius }) => {
     };
   }, [state.loaded, handleStyleChange]);
 
+  // Inside the Mapbox component, loop through the recommendations and add markers to the map
+  useEffect(() => {
+    if (map.current && state.loaded && recommendations) {
+      recommendations.forEach((recommendation: any) => {
+        if (recommendation.coordinates && map.current) {
+          const marker = new mapboxgl.Marker()
+            .setLngLat([
+              recommendation.coordinates.longitude,
+              recommendation.coordinates.latitude,
+            ])
+            .addTo(map.current);
+        }
+      });
+    }
+  }, [state.loaded, recommendations]);
   return (
     <>
       <div

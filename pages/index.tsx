@@ -16,6 +16,7 @@ export default function Home() {
   const [zoom, setZoom] = useState<number>(3.5);
   const [shouldExpand, setShouldExpand] = useState(false);
   const [formattedLocation, setFormattedLocation] = useState('');
+  const [recommendations, setRecommendations] = useState<any[]>([]);
 
   const fetchData = async (apiQuery: string) => {
     try {
@@ -216,6 +217,7 @@ export default function Home() {
           </button>
           <div className="pt-0 text-gray-100 justify-center items-center text-xs text-center flex">
             <select
+              // type="select"
               value={radius}
               onChange={handleRadiusChange}
               className="bg-gray-200/70 text-black text-center font-semibold ml-2 text-sm py-0 px-1 mr-1 rounded hover:bg-gray-300"
@@ -231,17 +233,18 @@ export default function Home() {
 
         <div className="mt-8 w-full px-4">
           <Mapbox
-            // ref={mapRef}
             center={center}
             zoom={zoom}
             radius={radius}
-            // boundingBox={boundingBox}
             cityData={null}
+            recommendations={recommendations}
           />
         </div>
         <ChatGPTAssistant
           location={formattedLocation}
           shouldExpand={shouldExpand}
+          radius={radius}
+          setRecommendations={setRecommendations}
         />
       </main>
     </div>
