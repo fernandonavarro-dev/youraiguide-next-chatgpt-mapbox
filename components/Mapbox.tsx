@@ -64,7 +64,7 @@ const Mapbox: React.FC<MapboxProps> = ({
         },
       });
     }
-  }, [center, state.loaded]);
+  }, [center, radius, state.loaded]);
 
   useEffect(() => {
     mapboxgl.accessToken = process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? '';
@@ -102,28 +102,31 @@ const Mapbox: React.FC<MapboxProps> = ({
     };
   }, [state.loaded, state.currentStyle, addCircle]);
 
-  const handleStyleChange = (newStyle: string) => {
-    if (!map.current || !state.loaded) return;
+  const handleStyleChange = useCallback(
+    (newStyle: string) => {
+      if (!map.current || !state.loaded) return;
 
-    // Remove the existing layers
-    if (map.current.getLayer('circle-fill')) {
-      map.current.removeLayer('circle-fill');
-    }
+      // Remove the existing layers
+      if (map.current.getLayer('circle-fill')) {
+        map.current.removeLayer('circle-fill');
+      }
 
-    // Remove the existing source
-    if (map.current.getSource('circle')) {
-      map.current.removeSource('circle');
-    }
+      // Remove the existing source
+      if (map.current.getSource('circle')) {
+        map.current.removeSource('circle');
+      }
 
-    // Set the new style
-    setState((prevState) => ({
-      ...prevState,
-      currentStyle: `mapbox://styles/mapbox/${newStyle}`,
-    }));
+      // Set the new style
+      setState((prevState) => ({
+        ...prevState,
+        currentStyle: `mapbox://styles/mapbox/${newStyle}`,
+      }));
 
-    // Add the layers back
-    addCircle();
-  };
+      // Add the layers back
+      addCircle();
+    },
+    [addCircle, state.loaded]
+  );
 
   useEffect(() => {
     if (!map.current || !state.loaded) return;
