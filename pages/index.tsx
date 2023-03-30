@@ -170,8 +170,8 @@ export default function Home() {
     <div className="min-h-screen bg-gray-800 py-6 flex flex-col justify-start sm:py-12">
       <Head>
         <title>Your AI Guide</title>
-        <meta name="description" content="Your AI Guide Web App" />
-        <link rel="icon" href="/favicon.ico" />
+        <meta name="Your AI Guide" content="Your AI Guide Web App" />
+        <link rel="icon" href="/open-ai-logo.png" />
       </Head>
 
       <main className="flex flex-col items-center">
