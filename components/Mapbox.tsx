@@ -20,6 +20,7 @@ const Mapbox: React.FC<MapboxProps> = ({
 }) => {
   const mapContainer = useRef<any>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const [markers, setMarkers] = useState<mapboxgl.Marker[]>([]);
   const [state, setState] = useState<{
     currentStyle: string;
     loaded: boolean;
@@ -149,19 +150,48 @@ const Mapbox: React.FC<MapboxProps> = ({
 
   // Inside the Mapbox component, loop through the recommendations and add markers to the map
   useEffect(() => {
+    // Remove any existing markers from the map
+    markers.forEach((marker) => marker.remove());
+
+    // Create an array to store new marker instances
+    const newMarkers: mapboxgl.Marker[] = [];
+
     if (map.current && state.loaded && recommendations) {
       recommendations.forEach((recommendation: any) => {
         if (recommendation.coordinates && map.current) {
-          const marker = new mapboxgl.Marker()
-            .setLngLat([
-              recommendation.coordinates.longitude,
-              recommendation.coordinates.latitude,
-            ])
-            .addTo(map.current);
+          // Calculate the distance between the center and the recommendation's coordinates
+          const recommendationPoint = turf.point([
+            recommendation.coordinates.longitude,
+            recommendation.coordinates.latitude,
+          ]);
+          const centerPoint = turf.point(center);
+          const distanceInMiles = turf.distance(
+            centerPoint,
+            recommendationPoint,
+            {
+              units: 'miles',
+            }
+          );
+
+          // Add a marker to the map only if the distance is within the radius
+          if (distanceInMiles <= radius) {
+            const marker = new mapboxgl.Marker()
+              .setLngLat([
+                recommendation.coordinates.longitude,
+                recommendation.coordinates.latitude,
+              ])
+              .addTo(map.current);
+
+            // Add the marker instance to the newMarkers array
+            newMarkers.push(marker);
+          }
         }
       });
     }
-  }, [state.loaded, recommendations]);
+    // Update the markers state with the new marker instances
+    setMarkers(newMarkers);
+  }, [state.loaded, recommendations, center, radius]);
+
   return (
     <>
       <div

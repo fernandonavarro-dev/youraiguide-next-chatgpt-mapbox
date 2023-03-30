@@ -221,8 +221,15 @@ function ChatGPTAssistant({
       // Extract natural language message
       const [message, jsonStr] =
         data.choices[0].message.content.split('---JSON---');
-      // Extract JSON to map recommendations as markers
-      const structuredData = jsonStr ? JSON.parse(jsonStr.trim()) : null;
+
+      // Extract JSON to map recommendations as markers, if JSON string is provided
+      let structuredData = null;
+      if (jsonStr) {
+        const jsonStrWithoutEllipsis = jsonStr.replace('...', '').trim();
+        structuredData = jsonStrWithoutEllipsis
+          ? JSON.parse(jsonStrWithoutEllipsis.replace(/`/g, ''))
+          : null;
+      }
 
       setMessages([
         ...chatMessages,
