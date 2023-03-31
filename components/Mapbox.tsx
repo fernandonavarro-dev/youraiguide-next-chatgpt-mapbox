@@ -193,7 +193,7 @@ const Mapbox: React.FC<MapboxProps> = ({
     }
     // Update the markers state with the new marker instances
     setMarkers(newMarkers);
-  }, [state.loaded, recommendations, center, radius]);
+  }, [state.loaded, recommendations, center, radius, markers]);
 
   return (
     <>
