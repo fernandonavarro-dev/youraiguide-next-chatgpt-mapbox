@@ -26,7 +26,10 @@ export default function Home() {
         apiQuery = `zipCode=${zipCode}`;
       } else if (cityState) {
         const [city, state] = cityState.split(',').map((s) => s.trim());
-        apiQuery = `city=${city}&state=${state}`;
+        // URL-encode the city and state values
+        apiQuery = `city=${encodeURIComponent(city)}&state=${encodeURIComponent(
+          state
+        )}`;
       } else {
         console.log('No valid input provided.');
         return;
@@ -134,8 +137,17 @@ export default function Home() {
     if (zipCode) {
       apiQuery = `zipCode=${zipCode}`;
     } else if (cityState) {
-      const [city, state] = cityState.split(',').map((s) => s.trim());
-      apiQuery = `city=${city}&state=${state}`;
+      // Find the index of the last occurrence of a comma
+      const lastCommaIndex = cityState.lastIndexOf(',');
+      if (lastCommaIndex !== -1) {
+        // Extract the city and state based on the last occurrence of the comma
+        const city = cityState.substring(0, lastCommaIndex).trim();
+        const state = cityState.substring(lastCommaIndex + 1).trim();
+        apiQuery = `city=${encodeURIComponent(city)}&state=${state}`;
+      } else {
+        console.log('No valid input provided.');
+        return;
+      }
     } else {
       console.log('No valid input provided.');
       return;

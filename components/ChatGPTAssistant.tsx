@@ -257,6 +257,13 @@ function ChatGPTAssistant({
       {expanded && (
         <>
           <MessageList messages={messages} />
+          {typing && (
+            <div className="flex flex-col justify-between h-20">
+              <div className="h-6 text-left text-gray-200 pl-3 mb-1">
+                ChatGPT is typing...
+              </div>
+            </div>
+          )}
           <MessageInputForm
             inputValue={inputValue}
             setInputValue={setInputValue}

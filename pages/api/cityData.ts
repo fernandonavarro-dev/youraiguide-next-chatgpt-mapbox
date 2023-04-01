@@ -28,7 +28,11 @@ export default async function handler(
     if (cityData) {
       res.status(200).json(cityData);
     } else {
-      res.status(404).json({ error: 'City data not found.' });
+      res.status(404).json({
+        error: 'City data not found.',
+        message:
+          'Please search for a specific city or town (e.g., Instead of Lake Tahoe, something like South Lake Tahoe, Tahoe City, Incline Village).',
+      });
     }
   } catch (error) {
     console.error(error);
